@@ -1,0 +1,12 @@
+; fluffytail config
+[irc]
+host = irc.example.net:6697
+usessl = on
+channel = "#serverlogs"
+senddelay = 300 # milliseconds between messages to wait, for flood prevention
+
+[bot]
+nick = adagiodazzle
+user = fluffy
+onconnect = OPER adagio opensesame
+onconnect = PRIVMSG NickServ :IDENTIFY adagiodazzle opensesame

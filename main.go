@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os/exec"
+	"strings"
 	"time"
 
 	"github.com/shizeeg/gcfg"
@@ -46,6 +47,8 @@ func main() {
 	log.Printf("connecting bot to %s", config.IRC.Host)
 	bot.Connect(config.IRC.Host)
 
+	queue := make(chan string, 0)
+
 	bot.AddCallback("001", func(e *irc.Event) {
 		for _, cmd := range config.Bot.OnConnect {
 			log.Printf("sending raw line '%s'", cmd)
@@ -56,43 +59,53 @@ func main() {
 		log.Printf("joining %s", config.IRC.Channel)
 		bot.Join(config.IRC.Channel)
 
-		go watchLogs(bot)
+		go watchLogs(bot, queue)
+	})
+
+	bot.AddCallback("PRIVMSG", func(e *irc.Event) {
+		if strings.HasPrefix(e.Message(), "!sys-stats") {
+			subProcess := exec.Command("/usr/bin/uptime")
+			readOutputFromCommand(subProcess, queue)
+
+			subProcess = exec.Command("/usr/bin/free", "-m")
+			readOutputFromCommand(subProcess, queue)
+		}
 	})
 
 	bot.Loop()
 }
 
-func watchLogs(bot *irc.Connection) {
+func watchLogs(bot *irc.Connection, queue chan string) {
 	subProcess := exec.Command("/usr/bin/journalctl", "-f", "-l")
+	go readOutputFromCommand(subProcess, queue)
 
-	stdout, err := subProcess.StdoutPipe()
-	if err != nil {
-		log.Fatal("failed to get stdout pipe for log gathering subprocess")
-	}
-
-	err = subProcess.Start()
-	if err != nil {
-		log.Fatal("failed to start log gathering subprocess: %v", err)
-	}
-
-	scanner := bufio.NewScanner(stdout)
-	msgs := make(chan string, 0)
-
-	go func() {
-		for scanner.Scan() {
-			line := scanner.Text()
-
-			if scanner.Err() != nil {
-				log.Fatalf("failed reading a line somewhere (got '%s') -- dying", line)
-			}
-
-			msgs <- fmt.Sprintf("<-- %s", line)
-		}
-	}()
-
-	for msg := range msgs {
+	for msg := range queue {
 		time.Sleep(time.Duration(config.Bot.SendDelay) * time.Millisecond)
 		bot.Privmsg(config.IRC.Channel, msg)
 	}
 
+}
+
+func readOutputFromCommand(subProcess *exec.Cmd, queue chan string) {
+	stdout, err := subProcess.StdoutPipe()
+	if err != nil {
+		log.Fatal("failed to call subprocess: %v", err)
+	}
+
+	err = subProcess.Start()
+	if err != nil {
+		log.Fatal("failed to start: %v", err)
+	}
+
+	scanner := bufio.NewScanner(stdout)
+
+	for scanner.Scan() {
+		line := scanner.Text()
+
+		if scanner.Err() != nil {
+			log.Fatalf("failed reading a line somewhere (got '%s') -- dying", line)
+		}
+
+		queue <- fmt.Sprintf("<-- %s", line)
+	}
 }

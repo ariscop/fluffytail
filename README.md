@@ -15,6 +15,7 @@ The configuration file format looks something like:
 ; fluffytail config
 [irc]
 host = irc.example.net:6697
+password = passwords_are_magic
 usessl = on
 channel = "#serverlogs"
 senddelay = 300 # milliseconds

@@ -1,0 +1,14 @@
+[Unit]
+Description=system logs piped to irc
+After=network.target
+
+[Service]
+ExecStart=/usr/local/bin/fluffytail -conf /etc/fluffytail.conf
+TimeoutSec=300
+LimitNOFILE=65535
+Restart=always
+NoNewPrivileges=true
+OOMScoreAdjust=-1000
+
+[Install]
+WantedBy=multi-user.target

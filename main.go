@@ -45,16 +45,6 @@ func main() {
 
 	log.Printf("connecting bot to %s", config.IRC.Host)
 	bot.Connect(config.IRC.Host)
-	bot.Privmsg("Rylee", "test")
-
-	for _, cmd := range config.Bot.OnConnect {
-		log.Printf("sending raw line '%s'", cmd)
-
-		bot.SendRaw(cmd)
-	}
-
-	log.Printf("joining %s", config.IRC.Channel)
-	bot.Join(config.IRC.Channel)
 
 	subProcess := exec.Command("/usr/bin/journalctl", "-f", "-l")
 
@@ -89,6 +79,17 @@ func main() {
 			bot.Privmsg(config.IRC.Channel, msg)
 		}
 	}()
+
+	bot.AddCallback("001", func(e *irc.Event) {
+		for _, cmd := range config.Bot.OnConnect {
+			log.Printf("sending raw line '%s'", cmd)
+
+			bot.SendRaw(cmd)
+		}
+
+		log.Printf("joining %s", config.IRC.Channel)
+		bot.Join(config.IRC.Channel)
+	})
 
 	bot.Loop()
 }

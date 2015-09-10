@@ -4,10 +4,10 @@ host = irc.example.net:6697
 password = passwords_are_magic
 usessl = on
 channel = "#serverlogs"
-senddelay = 300 # milliseconds between messages to wait, for flood prevention
 
 [bot]
 nick = adagiodazzle
 user = fluffy
+senddelay = 300 # milliseconds between messages to wait, for flood prevention
 onconnect = OPER adagio opensesame
 onconnect = PRIVMSG NickServ :IDENTIFY adagiodazzle opensesame

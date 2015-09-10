@@ -18,11 +18,11 @@ host = irc.example.net:6697
 password = passwords_are_magic
 usessl = on
 channel = "#serverlogs"
-senddelay = 300 # milliseconds
 
 [bot]
 nick = adagiodazzle
 user = fluffy
+senddelay = 300 # milliseconds
 onconnect = OPER adagio opensesame
 onconnect = PRIVMSG NickServ :IDENTIFY adagiodazzle opensesame
 ```
